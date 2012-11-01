@@ -69,10 +69,8 @@ stepConsole st = do
     dirFromString s = if null s then Nothing else Just $ (read s :: Direction)
 
 main = 
-  let 
-    s0 = GameState $ Snake (qFromList [Point 1 1, Point 2 1]) DRight
-  in
    main0 s0
    where
+     s0 = GameState $ Snake (qFromList [Point 1 1, Point 2 1]) DRight
      main0 = main0 <=< stepConsole
 
