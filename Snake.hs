@@ -1,12 +1,19 @@
 module Snake (
-  Input(..),
   Direction(..),
-  Snake(..),
   Point(..),
+  
+  Snake,
+  heading,
+  snakeHead,
+  snakeEnd,
+  snakeTail,
+  
+  Input(..),
+  Output(..),
+  
   GameState(..),
   mkGame,
   stepGame,
-  Output(..)
   ) where
 
 import Queue
@@ -37,6 +44,15 @@ data Snake = Snake {
   heading :: Direction 
 }
 
+snakeHead :: Snake -> Point
+snakeHead s = fromJust $ lastOfQ $ body s
+
+snakeEnd :: Snake -> Point
+snakeEnd s = fromJust $ snd $ deq $ body s
+
+snakeTail :: Snake -> [Point]
+snakeTail s = tail $ qToList $ body s 
+
 instance Show Snake where
   show s = show (qToList $ body s) ++ " heading " ++ show (heading s)
 
@@ -44,32 +60,39 @@ advance :: Snake -> Snake
 advance = do
   points <- body 
   dir <- heading
-  let extendedPoint = offset dir $ fromJust $ lastOfQ points
-  let newPoints = fst $ deq $ enq extendedPoint points
+  hd <- snakeHead
+  let extendedPoint = offset dir hd
+  let (newPoints, droppedEnd) = deq $ enq extendedPoint points
   return $ Snake newPoints dir
-  
+       
 dirChange :: Snake -> Direction -> Maybe Snake
 dirChange snake dir =
   justIfNot (opposite dir == heading snake) snake'
   where
     snake' = snake { heading = dir }
-    
+
+collidesWithSelf :: Snake -> Bool
+collidesWithSelf s = 
+  let points = reverse $ qToList $ body s
+  in head points `elem` tail points
+
 data Log = String
 data Input = Input { inDirChange :: Direction }
 data GameState = GameState { stSnake :: Snake } 
 data Output = Output { newSt :: GameState, logs :: [Log], result :: Maybe () }
 
 mkGame :: GameState
-mkGame = GameState $ Snake (qFromList [Point 1 3, Point 2 3, Point 3 3, Point 4 3]) DRight
+mkGame = GameState $ Snake (qFromList $ fmap (flip Point 3) [1..5]) DRight
 
 stepGame :: [Input] -> GameState -> Output
 stepGame inputs st =
   let
     snake = stSnake st
     -- keep last only, we can do it for now since inputs are simple
-    input = if null inputs then Nothing else Just $ last inputs
+    input = justIfNot (null inputs) (last inputs)
     snake' = advance $ fromMaybe snake $ fmap inDirChange input >>= dirChange snake
+    finished = justIf (collidesWithSelf snake') ()
   in
-   Output (GameState snake') [] Nothing
+   Output (GameState snake') [] finished
 
 

@@ -32,6 +32,3 @@ qToList (Queue xs ys _) = xs ++ reverse ys
 
 qFromList :: [a] -> Queue a
 qFromList xs = Queue xs [] $ justIfNot (null xs) $ last xs
-
-
-

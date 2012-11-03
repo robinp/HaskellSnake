@@ -1,19 +1,21 @@
 module Main (main) where
 
+import Control.Monad.Trans.Maybe
 import Control.Monad ((<=<))
 
 import Snake
 
-stepConsole :: GameState -> IO GameState
-stepConsole st = do
+stepConsole :: GameState -> MaybeT IO GameState
+stepConsole st = MaybeT $ do
   input <- getLine
-  let st' = newSt $ stepGame (fmap Input $ dirFromString input) st
+  let (Output st' _ maybeFinished) = stepGame (fmap Input $ dirFromString input) st
   (putStrLn . show . stSnake) st' 
-  return st'
+  return $ maybe (Just st') (const Nothing) maybeFinished 
   where
     dirFromString s = if null s then [] else [read s :: Direction]
 
-main = 
-   main0 mkGame
+main = do
+   result <- runMaybeT $ main0 mkGame
+   putStrLn $ maybe "Finished" (\_ -> "?") result
    where
      main0 = main0 <=< stepConsole
