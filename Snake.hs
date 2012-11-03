@@ -55,18 +55,20 @@ dirChange snake dir =
     snake' = snake { heading = dir }
     
 data Log = String
-data Input = Input { inDirChange :: Maybe Direction }
+data Input = Input { inDirChange :: Direction }
 data GameState = GameState { stSnake :: Snake } 
 data Output = Output { newSt :: GameState, logs :: [Log], result :: Maybe () }
 
 mkGame :: GameState
 mkGame = GameState $ Snake (qFromList [Point 1 3, Point 2 3, Point 3 3, Point 4 3]) DRight
 
-stepGame :: Input -> GameState -> Output
-stepGame input st =
+stepGame :: [Input] -> GameState -> Output
+stepGame inputs st =
   let
     snake = stSnake st
-    snake' = advance $ fromMaybe snake $ inDirChange input >>= dirChange snake
+    -- keep last only, we can do it for now since inputs are simple
+    input = if null inputs then Nothing else Just $ last inputs
+    snake' = advance $ fromMaybe snake $ fmap inDirChange input >>= dirChange snake
   in
    Output (GameState snake') [] Nothing
 
